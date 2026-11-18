@@ -1,4 +1,4 @@
-import os, sqlite3, hashlib, secrets, shutil
+import os, sqlite3, hashlib, secrets, shutil, html
 from pathlib import Path
 from datetime import datetime
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
@@ -33,12 +33,12 @@ def need(req):
  return u
 def page(req):
  if not current(req): return RedirectResponse('/login',303)
- return HTMLResponse(HTML.replace('%%USER%%',current(req)).replace('%%ROLE%%',req.session.get('role','user')))
+ return HTMLResponse(HTML.replace('%%USER%%',html.escape(current(req))).replace('%%ROLE%%',html.escape(req.session.get('role','user'))))
 
 @app.get('/',response_class=HTMLResponse)
 def home(req:Request): return page(req)
 @app.get('/login',response_class=HTMLResponse)
-def loginpage(): return HTMLResponse(LOGIN)
+def loginpage(): return HTMLResponse(LOGIN.replace('%%ERROR%%',''))
 @app.post('/login')
 def login(req:Request, username:str=Form(...), password:str=Form(...)):
  c=db(); row=c.execute('SELECT * FROM users WHERE username=?',(username,)).fetchone();c.close()
@@ -65,8 +65,8 @@ def change_password(req:Request, old_password:str=Form(...), new_password:str=Fo
  u=need(req)
  if len(new_password)<10: raise HTTPException(400,'رمز جدید باید حداقل ۱۰ نویسه باشد')
  c=db(); row=c.execute('SELECT * FROM users WHERE username=?',(u,)).fetchone()
- if hashlib.pbkdf2_hmac('sha256',old_password.encode(),row['salt'].encode(),180000).hex()!=row['digest']:
-  raise HTTPException(400,'رمز فعلی صحیح نیست')
+ if not row or hashlib.pbkdf2_hmac('sha256',old_password.encode(),row['salt'].encode(),180000).hex()!=row['digest']:
+  c.close(); raise HTTPException(400,'رمز فعلی صحیح نیست')
  salt=secrets.token_hex(16); digest=hashlib.pbkdf2_hmac('sha256',new_password.encode(),salt.encode(),180000).hex()
  c.execute('UPDATE users SET salt=?,digest=? WHERE username=?',(salt,digest,u));c.commit();c.close();audit(u,'تغییر رمز');return RedirectResponse('/',303)
 @app.get('/api/files')
@@ -88,12 +88,12 @@ def upload(req:Request, file:UploadFile=File(...)):
 @app.get('/api/files/{fid}')
 def download(req:Request,fid:int):
  u=need(req);c=db();r=c.execute('SELECT * FROM files WHERE id=?',(fid,)).fetchone();c.close()
- if not r: raise HTTPException(404)
+ if not r or not (DATA/r['disk']).exists(): raise HTTPException(404,'فایل پیدا نشد')
  audit(u,'بازکردن/دریافت',r['name']);return FileResponse(DATA/r['disk'],filename=r['name'])
 @app.delete('/api/files/{fid}')
 def delete(req:Request,fid:int):
  u=need(req);c=db();r=c.execute('SELECT * FROM files WHERE id=?',(fid,)).fetchone()
- if not r: raise HTTPException(404)
+ if not r: c.close(); raise HTTPException(404)
  (DATA/r['disk']).unlink(missing_ok=True);c.execute('DELETE FROM files WHERE id=?',(fid,));c.commit();c.close();audit(u,'حذف',r['name']);return {'ok':True}
 @app.get('/api/messages')
 def messages(req:Request,after:int=0):

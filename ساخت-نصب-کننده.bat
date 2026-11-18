@@ -7,7 +7,7 @@ if not exist .build-venv py -3 -m venv .build-venv
 call .build-venv\Scripts\activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt pyinstaller
-pyinstaller --noconfirm --clean --windowed --name Hamkaraneh --collect-all fastapi --collect-all starlette --collect-all uvicorn --collect-all multipart --collect-all itsdangerous launcher.py
+pyinstaller --noconfirm --clean --windowed --name Hamkaraneh --collect-all fastapi --collect-all starlette --collect-all uvicorn --collect-all multipart --collect-all python_multipart --collect-all itsdangerous --collect-all anyio --collect-all h11 --collect-submodules websockets --collect-submodules httptools --hidden-import multipart --hidden-import python_multipart --hidden-import tkinter --hidden-import main launcher.py
 if errorlevel 1 (echo PyInstaller failed.& pause& exit /b 1)
 set ISCC=%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe
 if not exist "%ISCC%" set ISCC=%ProgramFiles%\Inno Setup 6\ISCC.exe
