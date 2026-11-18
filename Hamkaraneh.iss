@@ -38,8 +38,8 @@ Name: "{group}\همکارانه - اجرای سرور"; Filename: "{app}\{#MyApp
 Name: "{autodesktop}\همکارانه - اجرای سرور"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "netsh"; Parameters: 'advfirewall firewall add rule name="Hamkaraneh LAN 8000" dir=in action=allow protocol=TCP localport=8000 profile=private'; Tasks: firewall; Flags: runhidden
+Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""Hamkaraneh LAN 8000"" dir=in action=allow protocol=TCP localport=8000 profile=private"; Tasks: firewall; Flags: runhidden
 Filename: "{app}\{#MyAppExeName}"; Description: "اجرای سرور همکارانه"; Flags: postinstall nowait skipifsilent runasoriginaluser
 
 [UninstallRun]
-Filename: "netsh"; Parameters: 'advfirewall firewall delete rule name="Hamkaraneh LAN 8000"'; Flags: runhidden
+Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""Hamkaraneh LAN 8000"""; Flags: runhidden
